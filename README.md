@@ -18,12 +18,37 @@ me a chance to work with a bare OpenSearch mechanics.
 size mustn't exceed 400 KB (DynamoDB item size limit)
 - we can have up to 2 processes which can read from the same stream's shard at the same time - 
 having more can result in throttling - <u>if you use Global Table, then you can have ONLY ONE 
-stream reader</u>
+stream reader</u> - EDIT: if we want to have multiple DynamoDB Stream consumers, a straightforward 
+approach is to have these consumers subscribe to an SNS topic (SNS quota 12,500,000 subs/topic)
 - the code of Lambda consumer for DynamoDB Streams should be idempotent
+- max Lambda concurrent invocations is 1000 per second per AWS region - can be increased by AWS
+- max total SNS payload size is 256 KB (either individual message or the sum of the individual 
+lengths of all the batched messages); we can have up to 10 messages per batch
+- max SNS throughput 9000 (eu-west-1) messages per second (with batching) - can be increased by AWS
+- max total SQS payload size is 256 KB (either individual message or the sum of the individual
+  lengths of all the batched messages); we can have up to 10 messages per batch
+- nearly unlimited number of API calls per second, per API action (SendMessage, ReceiveMessage, 
+or DeleteMessage)
+- SQS/SNS payload length limitations effectively decrease our object size from <u>400 KB to 256 KB</u>
 
 ### Basic idea
+![Architecture](docs/2nd_arch_base.diagram.png "Architecture")
+1. Put item into DynamoDB table
+2. Capture record modifications with DynamoDB Streams
+3. Trigger Lambda function - read data from the Stream... 
+4. ...and publish the records to SNS topic
+5. Subscribed SQS queue pulls the data from the topic
+6. Trigger Lambda function and process the messages from the queue  \
+a) Update OpenSearch document  \
+b) In case of failure, retry update. If update still fails, send the message to SQS dead letter queue
+
+Optionally, we can add a Lambda event destination to handle the Stream processing (3) failures, caused
+for instance by SNS API throttling or exceeding Lambda concurrency limit.
+
+___
+### Drafts and junk notes
 #### 1st iteration - Architecture
-![1st - Architecture](docs/1st_arch_base_diagram.png "Architecture")
+![1st - Architecture](docs/1st_arch_base_diagram.png "Architecture - Old")
 1. Put item into DynamoDB table
 2. Capture record modifications with DynamoDB Streams
 3. When the change is detected, trigger Lambda function. The data will be read in batches, so we 
@@ -31,7 +56,7 @@ can save on the invocations
 4. Send data to OpenSearch service
 
 #### 1st iteration - Error handling
-![1st - Error handling](docs/1st_arch_error_handling_diagram.png "Error handling")
+![1st - Error handling](docs/1st_arch_error_handling_diagram.png "Error handling - Old")
 1. Put item into DynamoDB table
 2. Capture record modifications with DynamoDB Streams
 3. When the change is detected, trigger Lambda function  \
@@ -52,7 +77,8 @@ generally it's good practice for your Lambda to do one specific task
 
 These caveats will be addressed in the next iteration of the architecture.
 
-#### 2nd iteration - Architecture
-_tbc_
-#### 2nd iteration - Error handling
-_tbc_
+### Sources
+- https://docs.aws.amazon.com/lambda/latest/operatorguide/service-quotas.html
+- https://docs.aws.amazon.com/lambda/latest/operatorguide/invocation-modes.html
+- https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
+- https://docs.aws.amazon.com/general/latest/gr/sns.html
