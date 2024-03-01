@@ -6,7 +6,7 @@ access patterns - making it inefficient when handling more complex queries. This
 OpenSearch comes in. OpenSearch offers a set of neat search features and filters, making it easy 
 to extend our API to offer more sophisticated way to query our data.
 
-### Ok, by why not use [DynamoDB zero-ETL integration with OpenSearch](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/OpenSearchIngestionForDynamoDB.html)?
+### Ok, but why not use [DynamoDB zero-ETL integration with OpenSearch](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/OpenSearchIngestionForDynamoDB.html)?
 Under the hood, zero-ETL solution utilizes DynamoDB export to S3 feature, and it takes a bit 
 of time to synchronize the changes between DynamoDB source table and OpenSearch cluster.
 Also, personally I don't have so much of an experience working with OpenSearch, let alone creating 
