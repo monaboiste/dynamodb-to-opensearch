@@ -1,9 +1,12 @@
 # Other
 .DS_Store
 
-# IDE
-/.idea/
-/out/
+# Idea
+.idea/
+out/
+
+# VS Code
+*.code-workspace
 
 # Python
 *.tox/
