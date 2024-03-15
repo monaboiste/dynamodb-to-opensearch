@@ -59,6 +59,7 @@ async def record_handler(record: DynamoDBRecord) -> None:
 
 @logger.inject_lambda_context
 def lambda_handler(event: DynamoDBStreamEvent, context: LambdaContext) -> PartialItemFailureResponse:
+    logger.debug(event)
     response = async_process_partial_response(
         event=event,  # type: ignore
         record_handler=record_handler,
