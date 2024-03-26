@@ -1,0 +1,4 @@
+aws-lambda-powertools==2.32.0
+pydantic
+requests
+urllib3<2.1 # boto
